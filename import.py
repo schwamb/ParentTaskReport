@@ -5,7 +5,6 @@ df = pd.read_csv('report.csv')
 bidimensional_array = []
 with open('report.csv', newline='\n') as f:
     reader = csv.reader(f, delimiter=',')
-    # next(reader) 
     for row in reader:
         bidimensional_array.append([str(x) for x in row])
 
@@ -22,9 +21,6 @@ z = 0
 j = 0
 y = 0
 p = 0
-
-
-# print(allParentData)
 
 # Creates a list of dictionaries that have a key of the parent task and a value of all tasks (parent and child) with a single value per key
 for x in bidimensional_array:
@@ -43,47 +39,16 @@ for x in bidimensional_array:
             if x[11] == parents[(len(parents))-1]:
                 master.append({parents[(len(parents)-1)]: (x[0]+("|"))})
 
+# create a dataframe of all task values in bidimensional_array, then check for all values in parents. Create a dataframe with all parent task IDs and the tracker type
 rawData = pd.DataFrame(bidimensional_array)
 pdata = (rawData[rawData[0].isin(parents)])
-# print(pdata)
-# IF PARENTS HAS A VALUE THAT IS NOT IN PDATA, THEN THAT VALUE SHOULD BE DROPPED FROM PARENTS, BUT THIS SHOULD HAPPEN AFTER PARENTS, GROUPS AND CLIENTS HAVE BEEN COMBINED
+
 numericPData = pd.to_numeric(pdata[0])
 npd_df = pd.DataFrame(numericPData)
 npd_df["Tracker"]=pdata[1]
 
 npdcol = ["Parent_Task","Tracker"]
 npd_df.columns= npdcol
-# print(npd_df)
-
-
-
-
-
-# parents_df = pd.DataFrame(parents)
-# numericParents = pd.to_numeric(parents_df[0])
-# np_df = pd.DataFrame(numericParents).sort_values(0)
-# compare_all = pd.DataFrame(allParentData[0]).reset_index()
-# print(npd_df)
-
-# # parents2=(rawData[rawData[0].isin(rawData[11])])
-
-
-
-# # NEXT STEP: Add parent task tracker type to dict
-# #     if x[9] != "Implementation File Receipt":
-# #             if x[11] not in parents:
-# #                 tracker.append(x[9])
-# # print(len(tracker))
-# # print(len(parents))
-
-# for x in allNumbers:
-#     if parents[y] in allNumbers:
-#     #     tracker.append(x[9])
-#         print("yes")
-#     # print(allNumbers)
-#         # print(parents[y])
-#         y=y+1
-
 
 # create a dict oF equal length to parents that returns to client and group name in the same order
 for i in parents:
@@ -101,11 +66,6 @@ for dict in master:
             res[list] = dict[list]
             holder.append(list)
 
-# j = 0
-# for i in holder:
-#     if holder[j] == bidimensional_array[0]:
-#         print(holder[j])
-
 
 # combine parent:subtask and parent:client, group dictionaries based on matching parent keys
 final = {key: pcg_dict[key] + "|" + res[key] for key in pcg_dict}
@@ -113,12 +73,6 @@ final = {key: pcg_dict[key] + "|" + res[key] for key in pcg_dict}
 
 # build dataframe and transpose columns and rows into desired orientation
 res_df = (pd.DataFrame.from_dict([final])).transpose()
-
-
-
-
-
-
 
 #add headers and split
 
@@ -134,38 +88,29 @@ for k in range(0, ((res_df1.shape[1])-2)):
     k=k+1
 
 headers.remove('Subtask_0')
-
 res_df1.columns = headers
 
 res_df1=res_df1.drop(columns=['Drop'])
 res_df1=res_df1.reset_index()
 res_df1=res_df1.rename(columns={"index":"Parent_Task"})
-# print(res_df1)
 
-# res_df.assign(InDf2=res_df.Parent_Task.isin(npd_df.IDs).astype(int))
 
+
+# check if the parent task in the res_df is in the dataframe of all parent_Tasks taken from column[0] of the bidimensional array (some will not be on account of having been deleted or not returned by deermine)
+# Drop the row if the parent task is not present, sort both DFs, then add the tracker to res_df
 res_df1 = res_df1.apply(pd.to_numeric, errors = "ignore")
 res_df1["IsIn"] = res_df1["Parent_Task"].isin(npd_df["Parent_Task"])
 res_df1=res_df1[res_df1.IsIn]
 npd_df = pd.DataFrame(npd_df).sort_values("Parent_Task")
 print(npd_df["Tracker"])
 res_df1 = pd.DataFrame(res_df1).sort_values("Parent_Task")
-# res_df1=pd.DataFrame.to_string(res_df1)
 
 tracker = npd_df["Tracker"].tolist()
 
 res_df1["Tracker"] = tracker
 res_df1=res_df1.drop(columns=['IsIn'])
 
-
-# print(res_df1)
-
-
-
-# print(res_df1.dtypes)
-
-
-print(res_df1)
+# Create csv (pipe delimited)
 res_df1.to_csv("out.csv", index=False)
 
 
