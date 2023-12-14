@@ -49,7 +49,7 @@ pdata = (rawData[rawData[0].isin(parents)])
 numericPData = pd.to_numeric(pdata[0])
 npd_df = pd.DataFrame(numericPData)
 npd_df["Status"]=pdata[1]
-npd_df["Created"]=pd.to_datetime(pdata[8])
+npd_df["Created"]=pd.to_datetime(pdata[8], unit='ns')
 npd_df["Tracker"]=pdata[9]
 npd_df["Age"]=(today-npd_df.Created).astype('timedelta64[ns]')
 
