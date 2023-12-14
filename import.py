@@ -1,5 +1,6 @@
 import csv
 import pandas as pd 
+
 df = pd.read_csv('report.csv')
 
 bidimensional_array = []
@@ -13,7 +14,7 @@ x = int()
 parents=[]
 groups = []
 clients = []
-tracker = []
+
 pcg_dict = {}
 master=[]
 allNumbers = []
@@ -21,13 +22,15 @@ z = 0
 j = 0
 y = 0
 p = 0
+today = pd.to_datetime('today').normalize()
+print(today)
 
 # Creates a list of dictionaries that have a key of the parent task and a value of all tasks (parent and child) with a single value per key
 for x in bidimensional_array:
-    allNumbers.append(x[0])  
-    # Need to create logic that only creates dictionaries when there are IFRs and when parent isn't blank
-    z=z+1
+
+
     if x[9] == "Implementation File Receipt":
+        # Creates dictionaries when there are IFRs and when parent isn't blank
         if x[11] != "":
             #this creates a list of unique parents tasks to be used as the keys in our dictionary
             if x[11] not in parents:
@@ -39,16 +42,20 @@ for x in bidimensional_array:
             if x[11] == parents[(len(parents))-1]:
                 master.append({parents[(len(parents)-1)]: (x[0]+("|"))})
 
-# create a dataframe of all task values in bidimensional_array, then check for all values in parents. Create a dataframe with all parent task IDs and the tracker type
+# create a dataframe of all task values in bidimensional_array, then check for all values in parents. Create a dataframe with all parent task IDs, status, created date, tracker type, and age
 rawData = pd.DataFrame(bidimensional_array)
 pdata = (rawData[rawData[0].isin(parents)])
 
 numericPData = pd.to_numeric(pdata[0])
 npd_df = pd.DataFrame(numericPData)
-npd_df["Tracker"]=pdata[1]
+npd_df["Status"]=pdata[1]
+npd_df["Created"]=pd.to_datetime(pdata[8])
+npd_df["Tracker"]=pdata[9]
+npd_df["Age"]=(today-npd_df.Created).astype('timedelta64[ns]')
 
-npdcol = ["Parent_Task","Tracker"]
+npdcol = ["Parent_Task","Status","Created", "Tracker","Age"]
 npd_df.columns= npdcol
+print(npd_df)
 
 # create a dict oF equal length to parents that returns to client and group name in the same order
 for i in parents:
@@ -102,15 +109,21 @@ res_df1 = res_df1.apply(pd.to_numeric, errors = "ignore")
 res_df1["IsIn"] = res_df1["Parent_Task"].isin(npd_df["Parent_Task"])
 res_df1=res_df1[res_df1.IsIn]
 npd_df = pd.DataFrame(npd_df).sort_values("Parent_Task")
-print(npd_df["Tracker"])
 res_df1 = pd.DataFrame(res_df1).sort_values("Parent_Task")
 
+status = npd_df["Status"].tolist()
 tracker = npd_df["Tracker"].tolist()
+created = npd_df["Created"].tolist()
+age = npd_df["Age"].tolist()
 
+res_df1["Status"] = status
 res_df1["Tracker"] = tracker
+res_df1["Created_Date"] = created
+res_df1["Age"] = age
 res_df1=res_df1.drop(columns=['IsIn'])
 
 # Create csv (pipe delimited)
 res_df1.to_csv("out.csv", index=False)
 
 
+# NEXT STEPS: ADD AGE
