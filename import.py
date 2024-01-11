@@ -19,6 +19,7 @@ parents=[]
 groups = []
 clients = []
 links = []
+ifr_status = []
 
 
 pcg_dict = {}
@@ -41,6 +42,7 @@ pd.set_option('display.max_colwidth', None)
 for x in bidimensional_array:
 
     if x[9] == "Implementation File Receipt":
+        ifr_status.append(x[0] + " " + x[12])
         # Creates dictionaries when there are IFRs and when parent isn't blank
         if x[11] != "":
             #this creates a list of unique parents tasks to be used as the keys in our dictionary
@@ -51,7 +53,8 @@ for x in bidimensional_array:
             # now we need to get the values and input them into the appropriate dict
             # if value in x11 matches value in parents list then 
             if x[11] == parents[(len(parents))-1]:
-                master.append({parents[(len(parents)-1)]: (x[0]+("|"))})
+                master.append({parents[(len(parents)-1)]: (x[0]+("|") + x[12] + "|")})
+
 
 # create a dataframe of all task values in bidimensional_array, then check for all values in parents. Create a dataframe with all parent task IDs, status, created date, tracker type, and age
 rawData = pd.DataFrame(bidimensional_array)
@@ -81,6 +84,7 @@ for dict in master:
         else:
             res[list] = dict[list]
             holder.append(list)
+# print(res)
 
 # create a dict of equal length to parents that returns the client and group name in the same order
 for i in parents:
@@ -102,6 +106,7 @@ res_df1 = pd.concat([res_df[[0]], res_df[0].str.split('|', expand=True)], axis=1
 headers = ['Drop', 'Clients', 'Groups']
 k=0
 numbers = []
+print(res_df1)
 
 # programmatically generating headers to DF column length
 for k in range(0, ((res_df1.shape[1])-2)):
@@ -112,7 +117,7 @@ for k in range(0, ((res_df1.shape[1])-2)):
 headers.remove('Subtask_0')
 res_df1.columns = headers
 
-res_df1=res_df1.drop(columns=['Drop'])
+# res_df1=res_df1.drop(columns=['Drop'])
 res_df1=res_df1.reset_index()
 res_df1=res_df1.rename(columns={"index":"Parent_Task"})
 #NEXT STEP: Turn the Parent Task columns into links by prepending "https://deermine.cgt.us/issues/"
@@ -141,12 +146,12 @@ res_df1["Tracker"] = tracker
 res_df1["Created_Date"] = created
 res_df1["Age"] = age
 res_df1=res_df1.drop(columns=['IsIn'])
-
-
+# res_df1.dropna(inplace=True)
+res_df1 = res_df1.dropna(axis=1, how='all')
 
 ## TO REORDER DF: Get a count of the final number of columns, store in a variable. Then reorganize by incrementing or decrementing from the variable until you reach the variable size
 t = res_df1.shape[1]
-print(t)
+# print(t)
 
 
 # Create csv (pipe delimited)
