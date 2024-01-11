@@ -135,24 +135,36 @@ tracker = npd_df["Tracker"].tolist()
 created = npd_df["Created"].tolist()
 age = npd_df["Age"].tolist()
 
+count_ifrs = []
+count_received = []
+all_files = []
+h = 2
 # Create Excel formula to change Parent Task IDs to deermine links
 urlID = (res_df1["Parent_Task"].tolist())
 for x in urlID:
     links.append('=HYPERLINK("https://deermine.cgt.us/issues/'+ str(x) + '","' + str(x) +'")' )
+    count_ifrs.append('=(COUNTA(E'+str(h)+':R'+str(h)+')/2)')
+    count_received.append('=COUNTIF(E'+str(h)+':R'+str(h)+',"Received")')
+    h = h + 1
+
+
+
 
 res_df1["Parent_Task"]=links
 res_df1["Status"] = status
 res_df1["Tracker"] = tracker
 res_df1["Created_Date"] = created
 res_df1["Age"] = age
+res_df1["Number of IFRs"] = count_ifrs
+res_df1["Number of Files Received"] = count_received
 res_df1=res_df1.drop(columns=['IsIn'])
 # res_df1.dropna(inplace=True)
 res_df1 = res_df1.dropna(axis=1, how='all')
 
+
+
 ## TO REORDER DF: Get a count of the final number of columns, store in a variable. Then reorganize by incrementing or decrementing from the variable until you reach the variable size
 t = res_df1.shape[1]
-# print(t)
-
 
 # Create csv (pipe delimited)
 res_df1.to_csv("out.csv", index=False)
