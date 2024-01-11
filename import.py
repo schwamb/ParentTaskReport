@@ -165,6 +165,13 @@ res_df1 = res_df1.dropna(axis=1, how='all')
 
 ## TO REORDER DF: Get a count of the final number of columns, store in a variable. Then reorganize by incrementing or decrementing from the variable until you reach the variable size
 t = res_df1.shape[1]
+j = 2
+alphabet =['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+for x in urlID:
+    all_files.append('=ifna(' + alphabet[t-1] + str(j) +'='+alphabet[t-2] + str(j) +', FALSE)')
+    j = j+1
+
+res_df1["All Files Received"] = all_files
 
 # Create csv (pipe delimited)
 res_df1.to_csv("out.csv", index=False)
