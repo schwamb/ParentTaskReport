@@ -117,7 +117,7 @@ for k in range(0, ((res_df1.shape[1])-2)):
 headers.remove('Subtask_0')
 res_df1.columns = headers
 
-# res_df1=res_df1.drop(columns=['Drop'])
+res_df1=res_df1.drop(columns=['Drop'])
 res_df1=res_df1.reset_index()
 res_df1=res_df1.rename(columns={"index":"Parent_Task"})
 #NEXT STEP: Turn the Parent Task columns into links by prepending "https://deermine.cgt.us/issues/"
