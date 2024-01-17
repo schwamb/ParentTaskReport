@@ -106,7 +106,7 @@ res_df1 = pd.concat([res_df[[0]], res_df[0].str.split('|', expand=True)], axis=1
 headers = ['Drop', 'Clients', 'Groups']
 k=0
 numbers = []
-print(res_df1)
+# print(res_df1)
 
 # programmatically generating headers to DF column length
 for k in range(0, ((res_df1.shape[1])-2)):
@@ -139,12 +139,15 @@ count_ifrs = []
 count_received = []
 all_files = []
 h = 2
+alphabet =['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'aa', 'ab','ac', 'ad', 'ae','af','ag','ah','ai','aj','ak','al','am','an']
 # Create Excel formula to change Parent Task IDs to deermine links
 urlID = (res_df1["Parent_Task"].tolist())
+s = res_df1.shape[1]
+print(s)
 for x in urlID:
     links.append('=HYPERLINK("https://deermine.cgt.us/issues/'+ str(x) + '","' + str(x) +'")' )
-    count_ifrs.append('=(COUNTA(E'+str(h)+':R'+str(h)+')/2)')
-    count_received.append('=COUNTIF(E'+str(h)+':R'+str(h)+',"Received")')
+    count_ifrs.append('=(COUNTA(D'+str(h)+':'+ alphabet[s-3]+str(h)+')/2)')
+    count_received.append('=SUM(COUNTIF(D'+str(h)+':'+ alphabet[s-3]+str(h)+',{"Received","Ready to Implement"}))')
     h = h + 1
 
 
@@ -166,7 +169,7 @@ res_df1 = res_df1.dropna(axis=1, how='all')
 ## TO REORDER DF: Get a count of the final number of columns, store in a variable. Then reorganize by incrementing or decrementing from the variable until you reach the variable size
 t = res_df1.shape[1]
 j = 2
-alphabet =['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+
 for x in urlID:
     all_files.append('=ifna(' + alphabet[t-1] + str(j) +'='+alphabet[t-2] + str(j) +', FALSE)')
     j = j+1
