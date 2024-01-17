@@ -134,13 +134,13 @@ status = npd_df["Status"].tolist()
 tracker = npd_df["Tracker"].tolist()
 created = npd_df["Created"].tolist()
 age = npd_df["Age"].tolist()
-
+ 
 count_ifrs = []
 count_received = []
 all_files = []
 h = 2
 alphabet =['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'aa', 'ab','ac', 'ad', 'ae','af','ag','ah','ai','aj','ak','al','am','an']
-# Create Excel formula to change Parent Task IDs to deermine links
+# Create Excel formula to change Parent Task IDs to deermine links and to create comparative counts for number of ifrs vs. number of closed ifrs
 urlID = (res_df1["Parent_Task"].tolist())
 s = res_df1.shape[1]
 print(s)
@@ -170,6 +170,7 @@ res_df1 = res_df1.dropna(axis=1, how='all')
 t = res_df1.shape[1]
 j = 2
 
+# write excel formula to compare ifr count vs closed ifrs to determine if all files are received
 for x in urlID:
     all_files.append('=ifna(' + alphabet[t-1] + str(j) +'='+alphabet[t-2] + str(j) +', FALSE)')
     j = j+1
