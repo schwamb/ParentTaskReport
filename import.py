@@ -1,10 +1,14 @@
 import csv
 import pandas as pd 
+from datetime import datetime, date, timedelta
+
+# from datetime import date
+# import holidays as pyholidays
 
 df = pd.read_csv('report.csv')
 
 bidimensional_array = []
-with open('report.csv', newline='\n') as f:
+with open('report.csv', encoding='windows-1252', newline='\n') as f:
     reader = csv.reader(f, delimiter=',')
     for row in reader:
         bidimensional_array.append([str(x) for x in row])
@@ -13,18 +17,25 @@ with open('report.csv', newline='\n') as f:
 bidimensional_array.sort(key=lambda x:x[11], reverse=True)
 
 
-
 x = int()
 parents=[]
 groups = []
 clients = []
 links = []
 ifr_status = []
+ngo_list = []
+open_age = []
+closed_age = []
+closed_date = []
+date_format = '%Y-%m-%d %I:%M %p'
+now = datetime.now()
+today = now.strftime(date_format)
 
 
 pcg_dict = {}
 master=[]
 allNumbers = []
+
 z = 0
 j = 0
 y = 0
@@ -40,7 +51,17 @@ pd.set_option('display.max_colwidth', None)
 
 # Creates a list of dictionaries that have a key of the parent task and a value of all tasks (parent and child) with a single value per key
 for x in bidimensional_array:
-
+    if x[9] == "New Group Onboarding":
+        if x[1] == "Closed":
+            date_obj1 = datetime.strptime(x[8], date_format)
+            closed_obj = datetime.strptime(x[13], date_format)
+            closed_age.append(date_obj1)
+            closed_date.append(closed_obj)
+        if x[1] != "Closed":
+            ngo_list.append(x[0])
+            date_obj2 = datetime.strptime(x[8], date_format)
+            open_age.append(date_obj2)
+            
     if x[9] == "Implementation File Receipt":
         ifr_status.append(x[0] + " " + x[12])
         # Creates dictionaries when there are IFRs and when parent isn't blank
@@ -54,6 +75,46 @@ for x in bidimensional_array:
             # if value in x11 matches value in parents list then 
             if x[11] == parents[(len(parents))-1]:
                 master.append({parents[(len(parents)-1)]: (x[0]+("|") + x[12] + "|")})
+
+# Display the count of open NGOs
+print("Total Open NGO: " + str(len(ngo_list)))
+
+
+#Calculating the age of Closed NGOs from creation to closed date in business days converted to weeks
+results1=[]
+yz = 0
+for x in closed_age:
+    dates = (closed_age[yz] + timedelta(idx + 1)
+            for idx in range((closed_date[yz] - closed_age[yz]).days))
+    
+# summing all weekdays
+    result1 = sum(1 for day in dates if day.weekday() < 5)
+    results1.append(result1)
+    # print(open_age[xy])
+    yz = yz + 1
+avg_closed = round(((sum(results1)/len(results1))/5),2)
+# printing
+print("Average Weeks Open to Production: " + str(avg_closed) + " weeks.")
+
+
+#Calculating the age of Open NGOs from creation to today in business days converted to weeks
+results=[]
+xy = 0
+# generating dates
+for x in open_age:
+    dates = (open_age[xy] + timedelta(idx + 1)
+            for idx in range((today - open_age[xy]).days))
+    
+# summing all weekdays
+    result = sum(1 for day in dates if day.weekday() < 5)
+    results.append(result)
+    # print(open_age[xy])
+    xy = xy + 1
+avg_open = round(((sum(results)/len(results))/5),2)
+# printing
+print("Average Open Aging in Weeks: " + str(avg_open) + " weeks.")
+
+
 
 
 # create a dataframe of all task values in bidimensional_array, then check for all values in parents. Create a dataframe with all parent task IDs, status, created date, tracker type, and age
@@ -90,7 +151,6 @@ for dict in master:
 for i in parents:
     pcg_dict[i]= clients[j] + "|" + groups[j]
     j=j+1
-
 
 # combine parent:subtask and parent:client, group dictionaries based on matching parent keys
 final = {key: pcg_dict[key] + "|" + res[key] for key in pcg_dict}
@@ -139,17 +199,16 @@ count_ifrs = []
 count_received = []
 all_files = []
 h = 2
-alphabet =['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'aa', 'ab','ac', 'ad', 'ae','af','ag','ah','ai','aj','ak','al','am','an']
+alphabet =['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','aa','ab','ac','ad','ae','af','ag','ah','ai','aj','ak','al','am','an','ao','ap','aq','ar','as','at','au','av','aw','ax','ay','az','ba','bb','bc','bd','be','bf','bg','bh','bi','bj','bk','bl','bm','bn','bo','bp','bq','br','bs','bt','bu','bv','bw','bx','by','bz','ca','cb','cc','cd','ce','cf','cg','ch','ci','cj','ck','cl','cm','cn','co','cp','cq','cr','cs','ct','cu','cv' ]
 # Create Excel formula to change Parent Task IDs to deermine links and to create comparative counts for number of ifrs vs. number of closed ifrs
 urlID = (res_df1["Parent_Task"].tolist())
 s = res_df1.shape[1]
-print(s)
+# print(urlID)
 for x in urlID:
     links.append('=HYPERLINK("https://deermine.cgt.us/issues/'+ str(x) + '","' + str(x) +'")' )
     count_ifrs.append('=(COUNTA(D'+str(h)+':'+ alphabet[s-3]+str(h)+')/2)')
     count_received.append('=SUM(COUNTIF(D'+str(h)+':'+ alphabet[s-3]+str(h)+',{"Received","Ready to Implement"}))')
     h = h + 1
-
 
 
 
@@ -166,9 +225,28 @@ res_df1 = res_df1.dropna(axis=1, how='all')
 
 
 
+ifr_count_pre=pd.DataFrame((((res_df1.count(axis=1))-9)/2), columns=["0"])
+ifr_count = []
+cd = 1
+ifr_count=ifr_count_pre["0"].tolist()
+# print(ifr_count)
+
+
+# for x in ifr_count_pre:
+#     ifr_count.append(str(((ifr_count_pre.iloc[1:(cd)]).values.tolist())))
+#     cd = cd +1
+
+
+# received_count=res_df1.value_counts()["Received"]
+# print(received_count)
+
 ## TO REORDER DF: Get a count of the final number of columns, store in a variable. Then reorganize by incrementing or decrementing from the variable until you reach the variable size
 t = res_df1.shape[1]
 j = 2
+# for x in res_df1:
+#     if res_df1.
+# print(t)
+
 
 # write excel formula to compare ifr count vs closed ifrs to determine if all files are received
 for x in urlID:
@@ -177,8 +255,60 @@ for x in urlID:
 
 res_df1["All Files Received"] = all_files
 
+
+received_count = []
+xz = 0
+file_status_list = []
+
+
+# print(len(res_df1))
+# dfdict = res_df1.to_dict()
+while xz < len(res_df1):
+    df1 = pd.DataFrame(res_df1.iloc[xz, 0:(t-1)])
+    # print((df1.iloc[xz,0]))
+    file_status_list.append(str(((df1.iloc[1:(t-1)]).values.tolist())))
+    # received_count = df1[0].tolist()
+    # file_status_list.append(df1.iloc[xz,0])
+    # if res_df1.iloc[xz, 0:t] == "Received":
+    #     received_count.append(1)
+
+    test_str = str(file_status_list[xz])
+    
+    # initializing substring
+    value = ["Received", "Ready to Implement"]
+    
+    # using list comprehension + startswith()
+    # All occurrences of substring in string
+    received_file = [i for i in range(len(test_str)) if test_str.startswith(value[0], i)]
+    ready_file = [i for i in range(len(test_str)) if test_str.startswith(value[1], i)]
+    
+    # printing result
+    received_count.append(len(received_file+ready_file))
+
+
+    # print(xz)
+    xz = xz + 1
+# print(ifr_count)
+# print(len(received_count))
+ef = 0
+all_file_received = 0
+# # print(Counter(file_status_list))
+for x in received_count:
+    if float(received_count[ef]) == float(ifr_count[ef]):
+        # print("Round: "+ str(ef))
+        # print(float(received_count[ef]))
+        # print(float(ifr_count[ef]))
+        # print("True")
+        all_file_received = all_file_received +1
+    ef = ef +1
+print("Waiting for Sprint: " + str(all_file_received) +" (You will need to subtract the NGOs in the PSR from this number).")
+
+# print(received_count)
+
+
+
 # Create csv (pipe delimited)
 res_df1.to_csv("out.csv", index=False)
 
 
-# NEXT STEPS: ADD AGE
+# NEXT STEPS: UPDATE REPORT TO INCLUDE OPEN NGOS REGARDLESS OF IFR STATUS
