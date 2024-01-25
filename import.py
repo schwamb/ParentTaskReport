@@ -204,67 +204,62 @@ alphabet =['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','
 urlID = (res_df1["Parent_Task"].tolist())
 s = res_df1.shape[1]
 # print(urlID)
+
+
 for x in urlID:
     links.append('=HYPERLINK("https://deermine.cgt.us/issues/'+ str(x) + '","' + str(x) +'")' )
-    count_ifrs.append('=(COUNTA(D'+str(h)+':'+ alphabet[s-3]+str(h)+')/2)')
-    count_received.append('=SUM(COUNTIF(D'+str(h)+':'+ alphabet[s-3]+str(h)+',{"Received","Ready to Implement"}))')
+
     h = h + 1
-
-
 
 res_df1["Parent_Task"]=links
 res_df1["Status"] = status
 res_df1["Tracker"] = tracker
 res_df1["Created_Date"] = created
 res_df1["Age"] = age
-res_df1["Number of IFRs"] = count_ifrs
-res_df1["Number of Files Received"] = count_received
+
 res_df1=res_df1.drop(columns=['IsIn'])
 # res_df1.dropna(inplace=True)
 res_df1 = res_df1.dropna(axis=1, how='all')
+t = res_df1.shape[1]
+# print(t)
+# print(len(urlID))
+
+k = 2
+
+for x in urlID:
+    count_ifrs.append('=(COUNTA(D'+str(k)+':'+ alphabet[t-5]+str(k)+')/2)')
+    count_received.append('=SUM(COUNTIF(D'+str(k)+':'+ alphabet[t-5]+str(k)+',{"Received","Ready to Implement"}))')
+    all_files.append('=ifna(' + alphabet[t-1] + str(j) +'='+alphabet[t-2] + str(j) +', FALSE)')
+    j = j+1
+    k = k +1
+
+res_df1["Number of IFRs"] = count_ifrs
+res_df1["Number of Files Received"] = count_received
+res_df1["All Files Received"] = all_files
+
+# Create csv (pipe delimited)
+res_df1.to_csv("out.csv", index=False)
 
 
 
-ifr_count_pre=pd.DataFrame((((res_df1.count(axis=1))-9)/2), columns=["0"])
+# Create new DF of only open NGOs from transformed DF
+open_df = res_df1
+closed_NGOs = open_df[(open_df['Status']) == 'Closed'].index
+
+open_df.drop(closed_NGOs, inplace=True)
+
+ifr_count_pre=pd.DataFrame((((open_df.count(axis=1))-10)/2), columns=["0"])
+# print(ifr_count_pre)
 ifr_count = []
 cd = 1
 ifr_count=ifr_count_pre["0"].tolist()
-# print(ifr_count)
-
-
-# for x in ifr_count_pre:
-#     ifr_count.append(str(((ifr_count_pre.iloc[1:(cd)]).values.tolist())))
-#     cd = cd +1
-
-
-# received_count=res_df1.value_counts()["Received"]
-# print(received_count)
-
-## TO REORDER DF: Get a count of the final number of columns, store in a variable. Then reorganize by incrementing or decrementing from the variable until you reach the variable size
-t = res_df1.shape[1]
-j = 2
-# for x in res_df1:
-#     if res_df1.
-# print(t)
-
-
-# write excel formula to compare ifr count vs closed ifrs to determine if all files are received
-for x in urlID:
-    all_files.append('=ifna(' + alphabet[t-1] + str(j) +'='+alphabet[t-2] + str(j) +', FALSE)')
-    j = j+1
-
-res_df1["All Files Received"] = all_files
-
 
 received_count = []
+file_status_list= []
 xz = 0
-file_status_list = []
 
-
-# print(len(res_df1))
-# dfdict = res_df1.to_dict()
-while xz < len(res_df1):
-    df1 = pd.DataFrame(res_df1.iloc[xz, 0:(t-1)])
+while xz < len(open_df):
+    df1 = pd.DataFrame(open_df.iloc[xz, 0:(t-1)])
     # print((df1.iloc[xz,0]))
     file_status_list.append(str(((df1.iloc[1:(t-1)]).values.tolist())))
     # received_count = df1[0].tolist()
@@ -307,8 +302,6 @@ print("Waiting for Sprint: " + str(all_file_received) +" (You will need to subtr
 
 
 
-# Create csv (pipe delimited)
-res_df1.to_csv("out.csv", index=False)
 
 
 # NEXT STEPS: UPDATE REPORT TO INCLUDE OPEN NGOS REGARDLESS OF IFR STATUS
