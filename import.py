@@ -225,12 +225,12 @@ t = res_df1.shape[1]
 # print(len(urlID))
 
 k = 2
-
+o = 2
 for x in urlID:
     count_ifrs.append('=(COUNTA(D'+str(k)+':'+ alphabet[t-5]+str(k)+')/2)')
     count_received.append('=SUM(COUNTIF(D'+str(k)+':'+ alphabet[t-5]+str(k)+',{"Received","Ready to Implement"}))')
-    all_files.append('=ifna(' + alphabet[t-1] + str(j) +'='+alphabet[t-2] + str(j) +', FALSE)')
-    j = j+1
+    all_files.append('=ifna(' + alphabet[t+1] + str(o) +'='+alphabet[t] + str(o) +', FALSE)')
+    o = o+1
     k = k +1
 
 res_df1["Number of IFRs"] = count_ifrs
