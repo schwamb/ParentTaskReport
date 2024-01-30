@@ -93,7 +93,6 @@ for x in closed_age:
     # print(open_age[xy])
     yz = yz + 1
 avg_closed = round(((sum(results1)/len(results1))/5),2)
-# printing
 print("Average Weeks Open to Production: " + str(avg_closed) + " weeks.")
 
 
@@ -145,7 +144,7 @@ for dict in master:
         else:
             res[list] = dict[list]
             holder.append(list)
-# print(res)
+
 
 # create a dict of equal length to parents that returns the client and group name in the same order
 for i in parents:
@@ -154,19 +153,17 @@ for i in parents:
 
 # combine parent:subtask and parent:client, group dictionaries based on matching parent keys
 final = {key: pcg_dict[key] + "|" + res[key] for key in pcg_dict}
-# print(final)
+
 
 # build dataframe and transpose columns and rows into desired orientation
 res_df = (pd.DataFrame.from_dict([final])).transpose()
 
 
 #add headers and split
-
 res_df1 = pd.concat([res_df[[0]], res_df[0].str.split('|', expand=True)], axis=1)
 headers = ['Drop', 'Clients', 'Groups']
 k=0
 numbers = []
-# print(res_df1)
 
 # programmatically generating headers to DF column length
 for k in range(0, ((res_df1.shape[1])-2)):
@@ -180,8 +177,9 @@ res_df1.columns = headers
 res_df1=res_df1.drop(columns=['Drop'])
 res_df1=res_df1.reset_index()
 res_df1=res_df1.rename(columns={"index":"Parent_Task"})
-#NEXT STEP: Turn the Parent Task columns into links by prepending "https://deermine.cgt.us/issues/"
-## This will need to be the final step as the type will convert back to a string so a match cannot be run.
+
+
+
 # check if the parent task in the res_df is in the dataframe of all parent_Tasks taken from column[0] of the bidimensional array (some will not be on account of having been deleted or not returned by deermine)
 # Drop the row if the parent task is not present, sort both DFs, then add the tracker to res_df
 res_df1 = res_df1.apply(pd.to_numeric, errors = "ignore")
@@ -200,12 +198,10 @@ count_received = []
 all_files = []
 h = 2
 alphabet =['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','aa','ab','ac','ad','ae','af','ag','ah','ai','aj','ak','al','am','an','ao','ap','aq','ar','as','at','au','av','aw','ax','ay','az','ba','bb','bc','bd','be','bf','bg','bh','bi','bj','bk','bl','bm','bn','bo','bp','bq','br','bs','bt','bu','bv','bw','bx','by','bz','ca','cb','cc','cd','ce','cf','cg','ch','ci','cj','ck','cl','cm','cn','co','cp','cq','cr','cs','ct','cu','cv' ]
-# Create Excel formula to change Parent Task IDs to deermine links and to create comparative counts for number of ifrs vs. number of closed ifrs
 urlID = (res_df1["Parent_Task"].tolist())
 s = res_df1.shape[1]
-# print(urlID)
 
-
+#Turn the Parent Task columns into links by prepending "https://deermine.cgt.us/issues/"
 for x in urlID:
     links.append('=HYPERLINK("https://deermine.cgt.us/issues/'+ str(x) + '","' + str(x) +'")' )
 
@@ -218,12 +214,11 @@ res_df1["Created_Date"] = created
 res_df1["Age"] = age
 
 res_df1=res_df1.drop(columns=['IsIn'])
-# res_df1.dropna(inplace=True)
+
 res_df1 = res_df1.dropna(axis=1, how='all')
 t = res_df1.shape[1]
-# print(t)
-# print(len(urlID))
 
+#Add excel formulas to calculate the number of IFRs with "received" or "Ready to implement" status and compare to number or IFRs, return "TRUE" if values match
 k = 2
 o = 2
 for x in urlID:
@@ -249,7 +244,7 @@ closed_NGOs = open_df[(open_df['Status']) == 'Closed'].index
 open_df.drop(closed_NGOs, inplace=True)
 
 ifr_count_pre=pd.DataFrame((((open_df.count(axis=1))-10)/2), columns=["0"])
-# print(ifr_count_pre)
+
 ifr_count = []
 cd = 1
 ifr_count=ifr_count_pre["0"].tolist()
@@ -258,14 +253,11 @@ received_count = []
 file_status_list= []
 xz = 0
 
+
+#Look for all IFRs with a received or ready to implement status and add to list
 while xz < len(open_df):
     df1 = pd.DataFrame(open_df.iloc[xz, 0:(t-1)])
-    # print((df1.iloc[xz,0]))
     file_status_list.append(str(((df1.iloc[1:(t-1)]).values.tolist())))
-    # received_count = df1[0].tolist()
-    # file_status_list.append(df1.iloc[xz,0])
-    # if res_df1.iloc[xz, 0:t] == "Received":
-    #     received_count.append(1)
 
     test_str = str(file_status_list[xz])
     
@@ -276,32 +268,18 @@ while xz < len(open_df):
     # All occurrences of substring in string
     received_file = [i for i in range(len(test_str)) if test_str.startswith(value[0], i)]
     ready_file = [i for i in range(len(test_str)) if test_str.startswith(value[1], i)]
-    
-    # printing result
+
+#counting number of received/ready IFRs
     received_count.append(len(received_file+ready_file))
 
-
-    # print(xz)
     xz = xz + 1
-# print(ifr_count)
-# print(len(received_count))
+
 ef = 0
 all_file_received = 0
-# # print(Counter(file_status_list))
+
+#Count when expected IFR per row is the same as the received/ready IFR count per row and add to list. Print total number of matching.
 for x in received_count:
     if float(received_count[ef]) == float(ifr_count[ef]):
-        # print("Round: "+ str(ef))
-        # print(float(received_count[ef]))
-        # print(float(ifr_count[ef]))
-        # print("True")
         all_file_received = all_file_received +1
     ef = ef +1
 print("Waiting for Sprint: " + str(all_file_received) +" (You will need to subtract the NGOs in the PSR from this number).")
-
-# print(received_count)
-
-
-
-
-
-# NEXT STEPS: UPDATE REPORT TO INCLUDE OPEN NGOS REGARDLESS OF IFR STATUS
