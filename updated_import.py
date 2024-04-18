@@ -48,7 +48,7 @@ pd.set_option('display.width', None)
 pd.set_option('display.max_colwidth', None)
  
 # All dataframes hereafter reflect these changes.
-
+# Need to figure out a way to drop all IFRs/Subtasks with a status of "closed" OR overwrite the file status of to closed in the spreadsheet.
 # Creates a list of dictionaries that have a key of the parent task and a value of all tasks (parent and child) with a single value per key
 for x in bidimensional_array:
     if x[9] == "New Group Onboarding":
@@ -63,7 +63,14 @@ for x in bidimensional_array:
             open_age.append(date_obj2)
             
     if x[9] == "Implementation File Receipt":
-        ifr_status.append(x[0] + " " + x[12])
+        if x[1] == "Closed":
+            # ifr_status.append(x[0] + " " + "Closed")
+            x[12] = "Closed"
+            # print("IFR IS CLOSED")
+            # print(x[1] + x[12])
+        # else:
+        #     ifr_status.append(x[0] + " " + x[12])
+            # print("IFR IS OPEN")
         # Creates dictionaries when there are IFRs and when parent isn't blank
         if x[11] != "":
             #this creates a list of unique parents tasks to be used as the keys in our dictionary
@@ -75,10 +82,11 @@ for x in bidimensional_array:
             # if value in x11 matches value in parents list then 
             if x[11] == parents[(len(parents))-1]:
                 master.append({parents[(len(parents)-1)]: (x[0]+("|") + x[12] + "|")})
+# print(master)
 
 # Display the count of open NGOs
 print("Total Open NGO: " + str(len(ngo_list)))
-
+# print(ifr_status)
 
 #Calculating the age of Closed NGOs from creation to closed date in business days converted to weeks
 results1=[]
@@ -127,10 +135,12 @@ npd_df["Status"]=pdata[1]
 npd_df["Created"]=pd.to_datetime(pdata[8], unit='ns')
 npd_df["Tracker"]=pdata[9]
 npd_df["Age"]=(today-npd_df.Created).astype('timedelta64[ns]')
+npd_df["Direct_Onboarding"]=pdata[14]
 
-npdcol = ["Parent_Task","Status","Created", "Tracker","Age"]
+npdcol = ["Parent_Task","Status","Created", "Tracker","Age","Direct_Onboarding"]
 npd_df.columns= npdcol
 
+# print(npd_df)
 
 
 # create dictionary with parent task as key and subtasks as values
@@ -151,8 +161,11 @@ for i in parents:
     pcg_dict[i]= clients[j] + "|" + groups[j]
     j=j+1
 
+# print(pcg_dict)
+
 # combine parent:subtask and parent:client, group dictionaries based on matching parent keys
 final = {key: pcg_dict[key] + "|" + res[key] for key in pcg_dict}
+# print(res)
 
 
 # build dataframe and transpose columns and rows into desired orientation
@@ -177,6 +190,7 @@ res_df1.columns = headers
 res_df1=res_df1.drop(columns=['Drop'])
 res_df1=res_df1.reset_index()
 res_df1=res_df1.rename(columns={"index":"Parent_Task"})
+# print(res_df1)
 
 
 
@@ -189,14 +203,21 @@ npd_df = pd.DataFrame(npd_df).sort_values("Parent_Task")
 res_df1 = pd.DataFrame(res_df1).sort_values("Parent_Task")
 
 status = npd_df["Status"].tolist()
+# print(npd_df["Status"])
 tracker = npd_df["Tracker"].tolist()
 created = npd_df["Created"].tolist()
 age = npd_df["Age"].tolist()
+direct_onboard = npd_df["Direct_Onboarding"].tolist()
+
+# print(npd_df)
+# SUBTASK IS IN AND STATUS IS CORRECT
+# print(npd_df.iloc[100,:])
  
 count_ifrs = []
 count_received = []
 count_ready = []
 count_review = []
+closed_files = []
 all_files = []
 h = 2
 alphabet =['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','aa','ab','ac','ad','ae','af','ag','ah','ai','aj','ak','al','am','an','ao','ap','aq','ar','as','at','au','av','aw','ax','ay','az','ba','bb','bc','bd','be','bf','bg','bh','bi','bj','bk','bl','bm','bn','bo','bp','bq','br','bs','bt','bu','bv','bw','bx','by','bz','ca','cb','cc','cd','ce','cf','cg','ch','ci','cj','ck','cl','cm','cn','co','cp','cq','cr','cs','ct','cu','cv' ]
@@ -214,21 +235,28 @@ res_df1["Status"] = status
 res_df1["Tracker"] = tracker
 res_df1["Created_Date"] = created
 res_df1["Age"] = age
+res_df1["Direct_Onboarding"] = direct_onboard
 
+# SUBTASKS ARE POPULATED AT THIS POINT, STATUS IS NOT UPDATED TO CLOSED
+# print(res_df1.iloc[1,:])
 res_df1=res_df1.drop(columns=['IsIn'])
 
 res_df1 = res_df1.dropna(axis=1, how='all')
 t = res_df1.shape[1]
 
+
+
+
 #Add excel formulas to calculate the number of IFRs with "received" or "Ready to implement" status and compare to number or IFRs, return "TRUE" if values match
 k = 2
 o = 2
 for x in urlID:
-    count_ifrs.append('=(COUNTA(D'+str(k)+':'+ alphabet[t-5]+str(k)+')/2)')
+    count_ifrs.append('=(COUNTA(D'+str(k)+':'+ alphabet[t-6]+str(k)+')/2)')
     # We want to see which groups have files in "received" and no files in "waiting". Groups can have "Ready to Implement", but cannot ONLY be "Ready to Implement".
-    count_received.append('=SUM(COUNTIF(D'+str(k)+':'+ alphabet[t-5]+str(k)+',{"Received", "Ready to Implement"}))')
-    count_ready.append('=SUM(COUNTIF(D'+str(k)+':'+ alphabet[t-5]+str(k)+',{"Ready to Implement"}))')
-    count_review.append('=ifna(AND(' + alphabet[t+1] + str(o) +'='+alphabet[t] + str(o) +',' + alphabet[t+2] + str(o) +'<>'+alphabet[t] + str(o) + '),FALSE)')
+    count_received.append('=SUM(COUNTIF(D'+str(k)+':'+ alphabet[t-6]+str(k)+',{"Received", "Ready to Implement", "Closed"}))')
+    count_ready.append('=SUM(COUNTIF(D'+str(k)+':'+ alphabet[t-6]+str(k)+',{"Ready to Implement", "Closed"}))')
+    closed_files.append('=SUM(COUNTIF(D'+str(k)+':'+ alphabet[t-6]+str(k)+',{"Closed"}))')
+    count_review.append('=ifna(AND(' + alphabet[t+1] + str(o) +'='+alphabet[t] + str(o) +',' + alphabet[t+2] + str(o) +'<>'+alphabet[t] + str(o) + ',' + alphabet[t+2] + str(o) +'<>'+alphabet[t+3] + str(o) + '),FALSE)')
     all_files.append('=ifna(' + alphabet[t+2] + str(o) +'='+alphabet[t] + str(o) +', FALSE)')
     o = o+1
     k = k +1
@@ -236,6 +264,7 @@ for x in urlID:
 res_df1["Number of IFRs"] = count_ifrs
 res_df1["Number of Files Received"] = count_received
 res_df1["Number of Files Ready"] = count_ready
+res_df1["Number of Files Closed"] = closed_files
 res_df1["Pending File Review"] = count_review
 res_df1["All Files Ready"] = all_files
 
@@ -251,7 +280,9 @@ closed_NGOs = open_df[(open_df['Status']) == 'Closed'].index
 open_df.drop(closed_NGOs, inplace=True)
 # print((open_df.count(axis=1)))
 
-ifr_count_pre=pd.DataFrame((((open_df.count(axis=1))-12)/2), columns=["0"])
+ifr_count_pre=pd.DataFrame((((open_df.count(axis=1))-14)/2), columns=["0"])
+
+# print(open_df)
 
 # print(ifr_count_pre)
 
@@ -264,9 +295,10 @@ received_count = []
 ready_count = []
 review_count = 0
 file_status_list= []
+direct_onboard_list = []
 xz = 0
 
-
+# print(t)
 #Look for all IFRs with a received or ready to implement status and add to list
 while xz < len(open_df):
     df1 = pd.DataFrame(open_df.iloc[xz, 0:(t-1)])
@@ -274,27 +306,31 @@ while xz < len(open_df):
     file_status_list.append(str(((df1.iloc[1:(t-1)]).values.tolist())))
     # print(file_status_list)
     test_str = str(file_status_list[xz])
-    
+    if open_df.iloc[xz,t-1] == "Direct Onboard":
+        direct_onboard_list.append(open_df.iloc[xz,t-1])
     # initializing substring
-    value = ["Received", "Ready to Implement"]
+    value = ["Received", "Ready to Implement", "Closed"]
     # print(test_str.startswith(value[0], i))
     
     # using list comprehension + startswith()
     # All occurrences of substring in string
     received_file = [i for i in range(len(test_str)) if test_str.startswith(value[0], i)]
     ready_file = [i for i in range(len(test_str)) if test_str.startswith(value[1], i)]
+    closed_file = [i for i in range(len(test_str)) if test_str.startswith(value[2], i)]
     # print(ready_file)
 
 #counting number of received/ready IFRs
-    ready_count.append(len(ready_file))
-    received_count.append(len(received_file+ready_file))
+    ready_count.append(len(ready_file+closed_file))
+    received_count.append(len(received_file+ready_file+closed_file))
     xz = xz + 1
-# print(received_count)
+# print(open_df.iloc[0,61])
+
+# print(len(direct_onboard_list))
 ef = 0
 fg = 0
 all_file_received = 0
 all_file_ready = 0
-
+# print(ready_file)
 #Count when expected IFR per row is the same as the received/ready IFR count per row and add to list. Print total number of matching.
 for x in received_count:
     if float(received_count[ef]) == float(ifr_count[ef]):
@@ -305,5 +341,6 @@ for z in ready_count:
         all_file_ready = all_file_ready +1
     fg = fg +1
 review_count = all_file_received-all_file_ready
-print("All Files Received, Pending File Review Completion:" + str(review_count))
+print("All Files Received, Pending File Review Completion: " + str(review_count))
 print("Waiting for Sprint: " + str(all_file_ready) +" (You will need to subtract the NGOs in the PSR from this number).")
+print("Direct Onboarding Groups Ready for Processing/Pending Verification (non-EDM only): " + str(len(direct_onboard_list)))
