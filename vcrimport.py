@@ -5,10 +5,10 @@ from datetime import datetime, date, timedelta
 # from datetime import date
 # import holidays as pyholidays
 
-df = pd.read_csv('report.csv')
+df = pd.read_csv('vcrreport.csv')
 
 bidimensional_array = []
-with open('report.csv', encoding='windows-1252', newline='\n') as f:
+with open('vcrreport.csv', encoding='windows-1252', newline='\n') as f:
     reader = csv.reader(f, delimiter=',')
     for row in reader:
         bidimensional_array.append([str(x) for x in row])
@@ -51,7 +51,7 @@ pd.set_option('display.max_colwidth', None)
 
 # Creates a list of dictionaries that have a key of the parent task and a value of all tasks (parent and child) with a single value per key
 for x in bidimensional_array:
-    if x[9] == "New Group Onboarding":
+    if x[9] == "Vendor Change Request":
         if x[1] == "Closed":
             date_obj1 = datetime.strptime(x[8], date_format)
             closed_obj = datetime.strptime(x[13], date_format)
@@ -233,7 +233,7 @@ res_df1["Number of Files Received"] = count_received
 res_df1["All Files Received"] = all_files
 
 # Create csv (pipe delimited)
-res_df1.to_csv("out.csv", index=False)
+res_df1.to_csv("vcrout.csv", index=False)
 
 
 
@@ -267,9 +267,7 @@ while xz < len(open_df):
     # using list comprehension + startswith()
     # All occurrences of substring in string
     received_file = [i for i in range(len(test_str)) if test_str.startswith(value[0], i)]
-    print(received_file)
     ready_file = [i for i in range(len(test_str)) if test_str.startswith(value[1], i)]
-    print(ready_file)
 
 #counting number of received/ready IFRs
     received_count.append(len(received_file+ready_file))

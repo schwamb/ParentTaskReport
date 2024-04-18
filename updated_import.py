@@ -195,6 +195,8 @@ age = npd_df["Age"].tolist()
  
 count_ifrs = []
 count_received = []
+count_ready = []
+count_review = []
 all_files = []
 h = 2
 alphabet =['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','aa','ab','ac','ad','ae','af','ag','ah','ai','aj','ak','al','am','an','ao','ap','aq','ar','as','at','au','av','aw','ax','ay','az','ba','bb','bc','bd','be','bf','bg','bh','bi','bj','bk','bl','bm','bn','bo','bp','bq','br','bs','bt','bu','bv','bw','bx','by','bz','ca','cb','cc','cd','ce','cf','cg','ch','ci','cj','ck','cl','cm','cn','co','cp','cq','cr','cs','ct','cu','cv' ]
@@ -223,17 +225,22 @@ k = 2
 o = 2
 for x in urlID:
     count_ifrs.append('=(COUNTA(D'+str(k)+':'+ alphabet[t-5]+str(k)+')/2)')
-    count_received.append('=SUM(COUNTIF(D'+str(k)+':'+ alphabet[t-5]+str(k)+',{"Received","Ready to Implement"}))')
-    all_files.append('=ifna(' + alphabet[t+1] + str(o) +'='+alphabet[t] + str(o) +', FALSE)')
+    # We want to see which groups have files in "received" and no files in "waiting". Groups can have "Ready to Implement", but cannot ONLY be "Ready to Implement".
+    count_received.append('=SUM(COUNTIF(D'+str(k)+':'+ alphabet[t-5]+str(k)+',{"Received", "Ready to Implement"}))')
+    count_ready.append('=SUM(COUNTIF(D'+str(k)+':'+ alphabet[t-5]+str(k)+',{"Ready to Implement"}))')
+    count_review.append('=ifna(AND(' + alphabet[t+1] + str(o) +'='+alphabet[t] + str(o) +',' + alphabet[t+2] + str(o) +'<>'+alphabet[t] + str(o) + '),FALSE)')
+    all_files.append('=ifna(' + alphabet[t+2] + str(o) +'='+alphabet[t] + str(o) +', FALSE)')
     o = o+1
     k = k +1
 
 res_df1["Number of IFRs"] = count_ifrs
 res_df1["Number of Files Received"] = count_received
-res_df1["All Files Received"] = all_files
+res_df1["Number of Files Ready"] = count_ready
+res_df1["Pending File Review"] = count_review
+res_df1["All Files Ready"] = all_files
 
 # Create csv (pipe delimited)
-res_df1.to_csv("out.csv", index=False)
+res_df1.to_csv("out_v2.csv", index=False)
 
 
 
@@ -242,14 +249,20 @@ open_df = res_df1
 closed_NGOs = open_df[(open_df['Status']) == 'Closed'].index
 
 open_df.drop(closed_NGOs, inplace=True)
+# print((open_df.count(axis=1)))
 
-ifr_count_pre=pd.DataFrame((((open_df.count(axis=1))-10)/2), columns=["0"])
+ifr_count_pre=pd.DataFrame((((open_df.count(axis=1))-12)/2), columns=["0"])
+
+# print(ifr_count_pre)
 
 ifr_count = []
 cd = 1
 ifr_count=ifr_count_pre["0"].tolist()
+# print(ifr_count)
 
 received_count = []
+ready_count = []
+review_count = 0
 file_status_list= []
 xz = 0
 
@@ -257,31 +270,40 @@ xz = 0
 #Look for all IFRs with a received or ready to implement status and add to list
 while xz < len(open_df):
     df1 = pd.DataFrame(open_df.iloc[xz, 0:(t-1)])
+    # print(df1)
     file_status_list.append(str(((df1.iloc[1:(t-1)]).values.tolist())))
-
+    # print(file_status_list)
     test_str = str(file_status_list[xz])
     
     # initializing substring
     value = ["Received", "Ready to Implement"]
+    # print(test_str.startswith(value[0], i))
     
     # using list comprehension + startswith()
     # All occurrences of substring in string
     received_file = [i for i in range(len(test_str)) if test_str.startswith(value[0], i)]
-    print(received_file)
     ready_file = [i for i in range(len(test_str)) if test_str.startswith(value[1], i)]
-    print(ready_file)
+    # print(ready_file)
 
 #counting number of received/ready IFRs
+    ready_count.append(len(ready_file))
     received_count.append(len(received_file+ready_file))
-
     xz = xz + 1
-
+# print(received_count)
 ef = 0
+fg = 0
 all_file_received = 0
+all_file_ready = 0
 
 #Count when expected IFR per row is the same as the received/ready IFR count per row and add to list. Print total number of matching.
 for x in received_count:
     if float(received_count[ef]) == float(ifr_count[ef]):
         all_file_received = all_file_received +1
     ef = ef +1
-print("Waiting for Sprint: " + str(all_file_received) +" (You will need to subtract the NGOs in the PSR from this number).")
+for z in ready_count:
+    if float(ready_count[fg]) == float(ifr_count[fg]):
+        all_file_ready = all_file_ready +1
+    fg = fg +1
+review_count = all_file_received-all_file_ready
+print("All Files Received, Pending File Review Completion:" + str(review_count))
+print("Waiting for Sprint: " + str(all_file_ready) +" (You will need to subtract the NGOs in the PSR from this number).")
